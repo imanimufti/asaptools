@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>wenmeet — PRD Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="styles.css"></head>
+<body>
+<header><div class="hwrap"><span class="brand">wenmeet<span class="dot">·</span>PRD</span>
+<nav><a class="on" href="index.html">Overview</a><a href="product.html">Product</a><a href="backend.html">Backend</a><a href="integrations.html">Integrations</a><a href="decisions.html">Decision Log</a></nav></div></header>
+<main>
+<p class="kicker">PRD v1.0 · Aug 22 2026 · wenmeet-prd.netlify.app</p>
+<h1>wenmeet — scheduling that shows its thinking</h1>
+<p class="lede">A when2meet-class scheduler where the AI's certainty is visible as motion: a living nebula that swirls fast when nothing is known, densifies with every response, and settles into a slow gold breath when the meeting locks. Deterministic under the hood, honest on the surface.</p>
+
+<h2>1 · The one principle</h2>
+<p><strong>Motion is uncertainty made visible.</strong> The nebula is a certainty gauge, never a mascot. Open meeting → fast chaotic swirl (teal). Each acceptance adds mass and calm. Locked → slow breathing (gold). Conflict → amber flicker until re-locked. Every state the backend can be in has exactly one motion signature, so users read system state without reading text.</p>
+<div class="state">
+<span class="s" style="border-color:var(--teal);color:#0a6b60;background:var(--teal-bg)">OPEN</span><span class="arr">→</span>
+<span class="s" style="border-color:var(--teal);color:#0a6b60">COMPUTING</span><span class="arr">→</span>
+<span class="s" style="border-color:var(--gold);color:#8a6508;background:var(--gold-bg)">PROPOSED</span><span class="arr">→</span>
+<span class="s" style="border-color:var(--gold);color:#8a6508;background:var(--gold-bg)">LOCKED</span><span class="arr">⇄</span>
+<span class="s" style="border-color:var(--amber);color:#a35a05;background:var(--amber-bg)">DESTABILIZED / RECOMPUTING</span>
+</div>
+
+<h2>2 · v1 scope</h2>
+<p>Committed in the grill (round 1). CUJ ids reference the wireframe canvas.</p>
+<table>
+<tr><th>Ships v1</th><th>CUJ</th><th>Notes</th></tr>
+<tr><td>Core schedule loop</td><td class="mono">1b–1d</td><td>Create → paint → propose → lock. Reveal pattern: <strong>2b grid-anchored</strong> (answer lands on the winning cell; grid never leaves the screen).</td></tr>
+<tr><td>Reschedule loop</td><td class="mono">1e</td><td>Decline destabilizes the lock; re-compute reuses existing paints; history kept visible.</td></tr>
+<tr><td>No-common-slot negotiation</td><td class="mono">2f</td><td>AI names the cheapest flex ask; human sends it. <strong>Best-5 exit cut</strong> (depended on 2e, which is v2) — the only fallback is re-widening the window.</td></tr>
+<tr><td>Add-after-lock</td><td class="mono">2g</td><td>Calendar check on add; conflict routes to 1e.</td></tr>
+<tr><td>Meeting-space graph</td><td class="mono">1f</td><td>Star + attendee nodes, co-location halos, drag physics, semantic drop zones, artifact squares.</td></tr>
+<tr><td>Mobile invitee</td><td class="mono">2d</td><td>One-day-per-screen thumb paint; long-press = if-need-be; ≥44px targets.</td></tr>
+<tr><td>Landing page</td><td class="mono">1g</td><td>Team-voices nebula hero; features told as the three states.</td></tr>
+</table>
+<h3>Deferred</h3>
+<table>
+<tr><th>Item</th><th>Target</th><th>Why</th></tr>
+<tr><td>Keep-partial / async contract (<span class="mono">2e</span>)</td><td>v2</td><td>Needs recap + task plumbing.</td></tr>
+<tr><td>Recurring series (<span class="mono">2h</span>)</td><td>v2</td><td>Per-occurrence orbs build on a stable single-lock loop.</td></tr>
+<tr><td>Breakout blobs (<span class="mono">t3</span>)</td><td>v2 — groundwork in v1</td><td>See <a href="product.html#blobs">v2 setup</a> and the <a href="integrations.html#media">media-layer decision</a>.</td></tr>
+<tr><td>Invitee conflict nudges (<span class="mono">1C-3</span>)</td><td>v1.1</td><td>Guests have no OAuth in v1; organizer-side nudges only.</td></tr>
+</table>
+
+<h2>3 · Success metrics &amp; non-goals</h2>
+<ul>
+<li><strong>Lock quality (primary):</strong> a lock counts as successful only if <em>all</em> tagged decision-makers attend and, for meetings with &gt;3 invitees, ≥50% of invitees attend.</li>
+<li><strong>Quorum is a soft rule:</strong> scoring heavily weights DM presence + attendance ratio, but the AI may propose below-quorum with an explicit warning chip.</li>
+<li>Secondary: time-to-lock &lt; 24h median; invitee response rate ≥80%; zero silent reschedules (every change is announced with history).</li>
+<li><strong>Non-goals v1:</strong> being a video-call product (blobs are v2 and the media layer is deferred), replacing calendars (we write to Google, we don't render a calendar app), chat/LLM personality (the AI writes nothing free-form — see <a href="backend.html#scoring">scoring</a>).</li>
+</ul>
+
+<h2>4 · Team &amp; timeline — Fast plan</h2>
+<p>Chosen in round 2: <strong>4 eng + 1 designer + motion contractor · v1 in 6 weeks.</strong> (Alternatives logged: Lean 2-eng/10-wk; Balanced 3-eng/8-wk.)</p>
+<table>
+<tr><th>Weeks</th><th>Workstream</th></tr>
+<tr><td class="mono">1–2</td><td>Core loop (1b–1d) + deterministic scoring engine + Supabase schema; guest-token auth.</td></tr>
+<tr><td class="mono">2–3</td><td>2b grid-anchored reveal; realtime orb channel; Resend invite/reveal emails.</td></tr>
+<tr><td class="mono">3–4</td><td>Reschedule (1e), negotiation (2f), add-after-lock (2g); Google Calendar write + decline webhooks.</td></tr>
+<tr><td class="mono">4–5</td><td>Meeting-space graph (1f) + mobile invitee (2d) in parallel. <strong>v2 media spike starts wk 4</strong> (Daily vs LiveKit prototypes in the graph).</td></tr>
+<tr><td class="mono">5–6</td><td>Landing (1g), motion contractor pass on all nebula states, hardening, launch. <strong>Wk 6: media-layer decision</strong> (see <a href="integrations.html#media">Integrations §4</a>).</td></tr>
+</table>
+
+<h2>5 · Document map</h2>
+<div class="grid2">
+<div class="card"><h3 style="margin-top:0"><a href="product.html">Product PRD</a></h3><p style="margin:0;font-size:14px;color:var(--mut)">Personas, CUJ specs with acceptance criteria, nebula state machine, reveal spec, privacy model, v2 blob groundwork.</p></div>
+<div class="card"><h3 style="margin-top:0"><a href="backend.html">Backend Infrastructure PRD</a></h3><p style="margin:0;font-size:14px;color:var(--mut)">Netlify + Supabase architecture, data model, API surface, scoring engine, realtime, auth, security &amp; retention.</p></div>
+<div class="card"><h3 style="margin-top:0"><a href="integrations.html">Integration PRD</a></h3><p style="margin:0;font-size:14px;color:var(--mut)">Google Calendar OAuth + webhooks, Resend email flows, magic-link claim, v2 media-layer evaluation.</p></div>
+<div class="card"><h3 style="margin-top:0"><a href="decisions.html">Decision Log</a></h3><p style="margin:0;font-size:14px;color:var(--mut)">Every decision, its source (grill round or assumed), and status. Nothing in this PRD is undecided.</p></div>
+</div>
+</main>
+<footer>wenmeet PRD v1.0 · product ships at wenmeet-ccb (Netlify) · this site: wenmeet-prd.netlify.app · Aug 22 2026</footer>
+</body></html>

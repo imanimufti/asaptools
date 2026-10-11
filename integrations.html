@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>wenmeet — Integration PRD</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="styles.css"></head>
+<body>
+<header><div class="hwrap"><span class="brand">wenmeet<span class="dot">·</span>PRD</span>
+<nav><a href="index.html">Overview</a><a href="product.html">Product</a><a href="backend.html">Backend</a><a class="on" href="integrations.html">Integrations</a><a href="decisions.html">Decision Log</a></nav></div></header>
+<main>
+<p class="kicker">Integration PRD · v1.0</p>
+<h1>Integration PRD</h1>
+
+<h2>1 · Google Calendar (v1 — the only calendar)</h2>
+<table>
+<tr><th>Capability</th><th>Scope</th><th>Detail</th></tr>
+<tr><td>Conflict nudges (read)</td><td><code>calendar.readonly</code></td><td>Organizer-only in v1. Free/busy per painted cell → "clashes with your 1:1" nudge. Invitee OAuth deferred to v1.1 — guests get no nudges, by decision.</td></tr>
+<tr><td>Event write</td><td><code>calendar.events</code></td><td>On lock: event on organizer's calendar with all invitees as guests (Google emails them natively). Reschedule updates the same event; history in description.</td></tr>
+<tr><td>Decline detection</td><td>push channel (<code>events.watch</code>)</td><td>Watch registered per locked meeting → <code>/api/webhooks/gcal</code> → DESTABILIZED → 1e. Channels renew via scheduled function (they expire ~7 days).</td></tr>
+</table>
+<ul>
+<li>Incremental consent: read scope requested at create-time only if organizer opts into nudges; write scope requested at first lock.</li>
+<li>Failure mode: if OAuth is declined, lock still succeeds — confirmation falls back to Resend email with slot details, and decline detection falls back to in-app decline only.</li>
+</ul>
+
+<h2>2 · Resend (email — the only v1 notification channel)</h2>
+<table>
+<tr><th>Template</th><th>Trigger</th><th>Content rule</th></tr>
+<tr><td><code>invite</code></td><td>meeting created</td><td>First-person ask + tokenized paint link. No account language.</td></tr>
+<tr><td><code>reveal</code></td><td>state → PROPOSED</td><td>To organizer: the one proposal + ⓘ breakdown summary.</td></tr>
+<tr><td><code>lock_confirm</code></td><td>state → LOCKED</td><td>To all: slot, attendees, quorum status. Calendar invite arrives separately from Google.</td></tr>
+<tr><td><code>flex_ask</code></td><td>2f flex sent</td><td>To one invitee: one-tap Sure / Can't links. Reveals aggregate only.</td></tr>
+<tr><td><code>resched</code></td><td>re-lock after 1e</td><td>Old slot struck through, new slot, one-line reason.</td></tr>
+<tr><td><code>magic_link</code></td><td>guest claims history</td><td>15-min single-use token → Supabase auth session.</td></tr>
+</table>
+<ul><li>All templates versioned in-repo (React Email); same no-LLM rule as product copy. Domain auth (SPF/DKIM) on the product domain before launch — owner: infra eng, wk 2.</li></ul>
+
+<h2>3 · Netlify (hosting + functions)</h2>
+<ul>
+<li>This PRD site: <code>wenmeet-prd.netlify.app</code> (static, this folder, drag-and-drop deploy). Product: separate site <code>wenmeet-ccb</code>.</li>
+<li>Product build: static assets + <code>netlify/functions/*</code>; env vars per context (Supabase URL/keys, Google client, Resend key); deploy previews get the staging Supabase project.</li>
+<li>Scheduled functions: Google watch-channel renewal (daily), retention anonymizer (daily).</li>
+</ul>
+
+<h2 id="media">4 · v2 media layer — deferred, decision wk 6</h2>
+<p><strong>Decision date: end of week 6 (v1 launch), from the wk 4–6 spike readout.</strong> Owner: infra eng. The spike prototypes join-by-drag latency inside the live graph for both SDK options.</p>
+<table>
+<tr><th>Option</th><th>For</th><th>Against</th></tr>
+<tr><td><strong>Daily (SDK)</strong></td><td>Fastest embed; prebuilt UI escape hatch; recording API for 2e async recaps.</td><td>Per-minute cost scales with blob dwell time; less layout control inside the blob ring.</td></tr>
+<tr><td><strong>LiveKit Cloud</strong></td><td>Deep UI control (tiles inside the blob), open-source exit ramp, good data channels for presence.</td><td>More integration work; recording pipeline is ours to assemble.</td></tr>
+<tr><td><strong>Meet/Zoom links</strong></td><td>Near-zero build; blob is just a door.</td><td>Breaks the core v2 promise — join-by-drag becomes join-by-new-tab; no presence inside the blob; ruled out unless spike fails both SDKs.</td></tr>
+</table>
+<ul>
+<li>Decision criteria, in order: (1) drag-in → media-connected &lt; 2s, (2) presence fidelity (who's inside, live, from the graph), (3) recording for the 2e async contract, (4) cost per active blob-hour.</li>
+<li>Whatever wins, the blob contract is fixed by the <a href="product.html#blobs">v1 groundwork</a>: solid ring = enterable, × closes and folds artifacts back, membership changes go through <code>graph_nodes</code>.</li>
+</ul>
+
+<h2>5 · Explicitly not integrated in v1</h2>
+<ul>
+<li>Outlook / CalDAV / ICS export — Google-only by decision; revisit with demand data post-launch.</li>
+<li>Slack, push, SMS — email is the only channel; the orb is the in-app channel.</li>
+<li>Any LLM API — the AI is the deterministic scorer + motion; there is nothing to call.</li>
+</ul>
+</main>
+<footer>wenmeet Integration PRD v1.0 · Aug 22 2026</footer>
+</body></html>

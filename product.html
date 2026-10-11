@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>wenmeet — Product PRD</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="styles.css"></head>
+<body>
+<header><div class="hwrap"><span class="brand">wenmeet<span class="dot">·</span>PRD</span>
+<nav><a href="index.html">Overview</a><a class="on" href="product.html">Product</a><a href="backend.html">Backend</a><a href="integrations.html">Integrations</a><a href="decisions.html">Decision Log</a></nav></div></header>
+<main>
+<p class="kicker">Product PRD · v1.0</p>
+<h1>Product PRD</h1>
+
+<h2>1 · Personas &amp; roles</h2>
+<table>
+<tr><th>Role</th><th>Definition</th><th>Sees</th></tr>
+<tr><td><strong>Organizer</strong></td><td>Creates the meeting; the only role with Google OAuth in v1; tags decision-makers; approves locks and reschedules.</td><td>Everything — per-person paints, scores, reasoning.</td></tr>
+<tr><td><strong>Decision-maker (DM)</strong></td><td>Invitee(s) tagged by the organizer. Multiple allowed; quorum requires <strong>all</strong> DMs (assumed pick, round 3).</td><td>Aggregate heatmap only, like any invitee.</td></tr>
+<tr><td><strong>Invitee</strong></td><td>Guest, no account. Paints availability via tokenized link; may claim their history later by magic link.</td><td>Aggregate heatmap; never per-person paints.</td></tr>
+</table>
+
+<h2>2 · Nebula state machine</h2>
+<table>
+<tr><th>State</th><th>Motion signature</th><th>Trigger in / out</th></tr>
+<tr><td><span class="chip c-teal">OPEN</span></td><td>Fast chaotic swirl; density ∝ responses/total; speed ∝ 1 − responses/total.</td><td>In: invites sent. Out: all responses in, or organizer forces compute.</td></tr>
+<tr><td><span class="chip c-teal">COMPUTING</span></td><td>Dense fast swirl, orb expands (~2s beat).</td><td>Out: proposal ready → PROPOSED.</td></tr>
+<tr><td><span class="chip c-gold">PROPOSED</span></td><td>Orb shrinks and docks onto the winning grid cell (2b); gold outline.</td><td>Out: organizer locks, or picks an alternate (re-score, stay PROPOSED).</td></tr>
+<tr><td><span class="chip c-gold">LOCKED</span></td><td>Slow breathing, gold. Near-still.</td><td>Out: decline/removal → DESTABILIZED; meeting passes → CLOSED.</td></tr>
+<tr><td><span class="chip c-amber">DESTABILIZED</span></td><td>Gold→amber flicker, swirl speeds up — motion changes <em>before</em> any words.</td><td>Out: organizer chooses a repair path.</td></tr>
+<tr><td><span class="chip c-amber">RECOMPUTING</span></td><td>Amber swirl; reuses existing paints, nobody re-fills the grid.</td><td>Out: new PROPOSED (history keeps the struck-through old slot).</td></tr>
+<tr><td><span class="chip c-mut">CLOSED</span></td><td>Static.</td><td>Terminal.</td></tr>
+</table>
+<div class="note">Copy is first-person and template-driven ("I found a time that works for all 6 of you") but <strong>no LLM writes anything</strong> — every string is a versioned template filled from the score breakdown. Reasoning lives behind a ⓘ tap and shows the raw deterministic breakdown.</div>
+
+<h2>3 · CUJ specifications (v1)</h2>
+<h3>3.1 Core loop — create, paint, reveal, lock (wireframes 1b–1d)</h3>
+<ul>
+<li>Create: one intent field + constraint chips (duration, window, people). AI drafts the ask; organizer can veto suggested windows before sending.</li>
+<li>Paint: drag-paint <em>free</em> / <em>if-need-be</em>. Organizer-side conflict nudges from Google read ("Tuesday clashes with your 1:1 — keep it paintable?"); the AI flags, never edits paint. Invitee nudges are v1.1.</li>
+<li>Submitting visibly densifies the shared orb — every response adds mass in realtime for everyone watching.</li>
+<li><strong>Reveal = 2b grid-anchored:</strong> the orb docks onto the winning cell; popover shows one proposal + "Why not [other slot]?" interrogation; alternates behind a button, never a ranked wall. After lock the gold cell stays as the record.</li>
+<li>Acceptance: lock writes a Google Calendar event (organizer's calendar, invitees as guests) and sends the Resend confirmation. Median time-to-lock target &lt; 24h.</li>
+</ul>
+<h3>3.2 Reschedule loop (1e)</h3>
+<ul>
+<li>Decline detection (calendar webhook or in-app) → DESTABILIZED. Organizer chooses: find new time (all) or keep without the decliner. AI never re-books on its own.</li>
+<li>Re-compute reuses all paints. Re-lock shows history: <s>Tue 2pm</s> → Thu 10am.</li>
+</ul>
+<h3>3.3 No-common-slot negotiation (2f)</h3>
+<ul>
+<li>When no cell satisfies all required invitees, the orb visibly fails to converge (amber, won't settle), then the AI names the cheapest single flex ask ("only Ken painted Wed 4pm busy, with a movable block").</li>
+<li>Organizer sends the flex request; invitee gets a one-tap Sure / Can't. <strong>Best-5 fallback is cut</strong> — if the flex fails, the AI proposes widening the window (new dates), which re-enters the paint loop for the new cells only.</li>
+</ul>
+<h3>3.4 Add-after-lock (2g)</h3>
+<ul>
+<li>Adding a person to a locked meeting runs a calendar check (if they're a known/OAuth user) or an availability ask (guest). No conflict → gold stays gold. Conflict → organizer chooses optional-invite or re-run, which enters 1e scoped to 7 people.</li>
+</ul>
+<h3>3.5 Meeting-space graph (1f)</h3>
+<ul>
+<li>Star = meeting (anchored). Person nodes settle by home city; dashed teal halos mark co-location clusters; square nodes = artifacts (agenda, docs).</li>
+<li>Drag physics: shift-drag (desktop) or move-toggle; pull propagates along links, weaker per hop; links stretch elastically; swirl intensifies during drag; release re-settles at speed 7.</li>
+<li>Semantic drops: into a city halo = join that cluster in person; onto a person = attend remotely with them; open space = return home. Every drop is confirmed in copy with a ⓘ.</li>
+</ul>
+<h3>3.6 Mobile invitee (2d)</h3>
+<ul><li>One day per screen, 3 columns, cells ≥44px; swipe between days; long-press toggles if-need-be; conflict nudge (v1.1) as a bottom sheet; done-state fits one screen with the orb as receipt.</li></ul>
+<h3>3.7 Landing (1g)</h3>
+<ul><li>Nebula is the hero; particles are team voices (hover → creator quote — <strong>names/quotes still placeholder, owner: design, due wk 5</strong>). Features told as the three states. CTA drops into create with no signup wall.</li></ul>
+
+<h2>4 · Privacy model</h2>
+<ul>
+<li><strong>Organizer sees all; invitees see aggregate.</strong> The heatmap invitees see is count-per-cell only; per-person paints are organizer-scoped (enforced by Supabase RLS, see <a href="backend.html#security">Backend §6</a>).</li>
+<li>Flex requests (2f) are the one deliberate exception: the named invitee learns "everyone else can do X" — the ask itself reveals aggregate, never who painted what.</li>
+</ul>
+
+<h2 id="blobs">5 · v2: breakout blobs — groundwork shipped in v1</h2>
+<p>Blobs (wireframe t3): drag multiple nodes together → persistent proto-blob → live room anyone enters by dragging their own node in; blobs stay until clicked (peek card) or closed (×), and closing folds artifacts back into the parent meeting.</p>
+<ul>
+<li>Cluster detection is generic (n nodes, not person→halo only) — blob-spawn reuses v1 hit-testing.</li>
+<li>Drag physics unchanged; blobs are only a new drop-target type.</li>
+<li><strong>Solid ring is reserved:</strong> v1 halos are always dashed so "solid ring = enterable room" stays unambiguous in v2.</li>
+<li>Artifact nodes carry a <code>parent_meeting_id</code> from day one so breakout notes can re-attach.</li>
+<li>Graph canvas never auto-crops — blobs need parking room.</li>
+<li>Media layer decision: wk 6 — see <a href="integrations.html#media">Integrations §4</a>.</li>
+</ul>
+</main>
+<footer>wenmeet Product PRD v1.0 · Aug 22 2026</footer>
+</body></html>
