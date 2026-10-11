@@ -1,9 +1,9 @@
-# wenmeet — Engineering Handoff (full context log)
+# ASAP — Engineering Handoff (full context log)
 
 **Read this first.** It covers everything the product owner and design agreed: what we're building, why, every decision made, and where each reference file lives. If the code and this doc disagree, this doc wins. Open questions are listed in §14.
 
-- Product site (to build): Netlify site `wenmeet-ccb`
-- PRD site (already written, static): `prd-site/` → deploy as `wenmeet-prd.netlify.app`
+- Product site (to build): Netlify site serving `asap.tools`
+- PRD site (already written, static): `prd-site/` → deploy as `asap.tools/prd`
 - Date: Oct 11 2026 · Plan: **v1 in 6 weeks**, Fast team (4 eng + 1 designer + motion contractor)
 
 ---
@@ -12,14 +12,14 @@
 
 | File | What it is | How to use it |
 |---|---|---|
-| `Nebula Habitats.dc.html` | Interactive reference prototype: grid + orb, meeting-space graph, landing nebula | **Source of truth for motion and feel.** Open in a browser. |
-| `Nebula Habitats - Bundled.html` | Same prototype as one offline file | Send to people; don't edit it. |
-| `nebula.js` | `<nebula-field>` web component: canvas particles plus graph physics | **Port this logic as-is** (see §7). |
-| `CUJ Wireframes.dc.html` | Wireframes of every journey (ids 1a–3d) | Source of truth for flows. CUJ ids below refer to it. |
-| `CUJ Wireframes Deck.dc.html` + `.pptx` | The same wireframes as a slide deck | For presenting. |
-| `hyperframes-composition.html` | 21.5s motion composition for the video | Shows motion timing; the marketing video uses reveal 2a. |
+| `design/Nebula Habitats.dc.html` | Interactive reference prototype: grid + orb, meeting-space graph, landing nebula | **Source of truth for motion and feel.** Open in a browser. |
+| `design/Nebula Habitats - Bundled.html` | Same prototype as one offline file | Send to people; don't edit it. |
+| `app/src/nebula.js` | `<nebula-field>` web component: canvas particles plus graph physics | **Used as-is by the app** (see §7). |
+| `CUJ Wireframes.dc.html` (not in repo yet) | Wireframes of every journey (ids 1a–3d) | Source of truth for flows. CUJ ids below refer to it. The deck below has the same content. |
+| `design/CUJ Wireframes Deck.dc.html` + `design/CUJ-wireframes.pptx` | The same wireframes as a slide deck | For presenting. |
+| `hyperframes-composition.html` (not in repo yet) | 21.5s motion composition for the video | Shows motion timing; the marketing video uses reveal 2a. |
 | `prd-site/*.html` | Product, Backend, Integration PRDs + Decision Log | Long-form detail; this doc summarizes all of it. |
-| `support.js`, `deck-stage.js` | Prototype runtime | **Not production code.** Ignore. |
+| `design/support.js`, `deck-stage.js` | Prototype runtime | **Not production code.** Ignore. |
 
 ---
 
@@ -54,7 +54,7 @@ Copy rules:
 | 2g | Add attendee after lock |
 | 1f | Meeting-space knowledge graph with drag physics and semantic drops |
 | 2d | Mobile invitee paint view |
-| 1g | Landing page (team-voices nebula) |
+| — | Calendar homepage: asap.tools opens straight on the scheduling page (1g landing page dropped, see §5.8) |
 
 **Not in v1:**
 
@@ -194,11 +194,9 @@ Drag physics (already in `nebula.js`):
 
 Every drop shows its confirmation copy with an ⓘ.
 
-### 5.8 Landing (1g)
-- The nebula is the hero. Particles are team voices: hover one to show a creator quote.
-  - ⚠️ **Names and quotes are placeholders.** Owner: design, due wk 5.
-- Features are presented as the three states (open, locked, rescheduling), each with a small looping orb.
-- The CTA goes straight to Create, with no signup wall.
+### 5.8 Homepage (replaces the 1g landing page)
+- **Decided Oct 11 2026:** asap.tools opens straight on the scheduling calendar. There is no marketing landing page.
+- The homepage is Create (5.1): name the meeting, paint your own times, add people, send. No signup wall.
 
 ---
 
@@ -407,7 +405,7 @@ Candidates:
 - **SPF/DKIM** on the product domain by wk 2.
 
 **Netlify:**
-- Product site `wenmeet-ccb`: static build plus `netlify/functions/*`.
+- Product site `asap.tools`: static build plus `netlify/functions/*`.
 - Environment variables per context:
   - `SUPABASE_URL`
   - `SUPABASE_ANON_KEY`
@@ -429,7 +427,7 @@ Candidates:
 | 2–3 | 2b reveal, realtime orb channel, Resend invite/reveal/confirm, port `nebula.js` |
 | 3–4 | 1e reschedule, 2f negotiation, 2g add-after-lock, Google event write + watch webhooks |
 | 4–5 | 1f graph + semantic drops ∥ 2d mobile. **v2 media spike starts (wk 4).** |
-| 5–6 | 1g landing, motion contractor pass on all states, reduced-motion, hardening, launch. **Wk 6: media-layer decision.** |
+| 5–6 | Motion contractor pass on all states, reduced-motion, hardening, launch. **Wk 6: media-layer decision.** |
 
 Alternatives that were considered and rejected:
 - Lean: 2 eng, 10 weeks
@@ -454,7 +452,7 @@ Alternatives that were considered and rejected:
 - Multiple DMs
 - Invitee nudges in v1.1
 - Best-5 cut
-- PRD site `wenmeet-prd`, product site `wenmeet-ccb`
+- PRD at `asap.tools/prd`, product site `asap.tools`
 
 **Assumed** (design's pick; overridable, ask the product owner):
 
@@ -470,7 +468,6 @@ Alternatives that were considered and rejected:
 | Scoring weights | Versioned weights file |
 
 **Still open:**
-- Landing creator names/quotes (design, wk 5)
 - v2 media layer (wk 6)
 - Starting values for scoring weights `w1..w5`: **eng proposes them in wk 1** and tunes them on real test meetings
 

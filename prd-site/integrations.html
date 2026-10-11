@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>wenmeet — Integration PRD</title>
+<title>ASAP — Integration PRD</title>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="styles.css"></head>
 <body>
-<header><div class="hwrap"><span class="brand">wenmeet<span class="dot">·</span>PRD</span>
+<header><div class="hwrap"><span class="brand">ASAP<span class="dot">·</span>PRD</span>
 <nav><a href="index.html">Overview</a><a href="product.html">Product</a><a href="backend.html">Backend</a><a class="on" href="integrations.html">Integrations</a><a href="decisions.html">Decision Log</a></nav></div></header>
 <main>
 <p class="kicker">Integration PRD · v1.0</p>
@@ -35,7 +35,7 @@
 
 <h2>3 · Netlify (hosting + functions)</h2>
 <ul>
-<li>This PRD site: <code>wenmeet-prd.netlify.app</code> (static, this folder, drag-and-drop deploy). Product: separate site <code>wenmeet-ccb</code>.</li>
+<li>One Netlify site serves both: the product at <code>asap.tools</code> and this PRD (the <code>prd-site/</code> folder) at <code>asap.tools/prd</code>. The site deploys from the GitHub repo.</li>
 <li>Product build: static assets + <code>netlify/functions/*</code>; env vars per context (Supabase URL/keys, Google client, Resend key); deploy previews get the staging Supabase project.</li>
 <li>Scheduled functions: Google watch-channel renewal (daily), retention anonymizer (daily).</li>
 </ul>
@@ -60,5 +60,5 @@
 <li>Any LLM API — the AI is the deterministic scorer + motion; there is nothing to call.</li>
 </ul>
 </main>
-<footer>wenmeet Integration PRD v1.0 · Aug 22 2026</footer>
+<footer>ASAP Integration PRD v1.0 · Aug 22 2026</footer>
 </body></html>

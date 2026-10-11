@@ -1,0 +1,34 @@
+[build]
+  command = "npm run build"
+  publish = "app/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["pg-native"]
+
+# The PRD pages live at /prd
+[[redirects]]
+  from = "/prd"
+  to = "/prd/"
+  status = 301
+
+# Meeting links (/s/:token, later /m/:id) are app routes
+[[redirects]]
+  from = "/s/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/m/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    X-Frame-Options = "DENY"

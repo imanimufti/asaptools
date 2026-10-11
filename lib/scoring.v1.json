@@ -1,0 +1,12 @@
+{
+  "version": "v1",
+  "weights": {
+    "free_ratio": 1.0,
+    "all_dms_present": 2.0,
+    "attendance_ratio": 2.0,
+    "workhours_fit": 1.0,
+    "if_need_be": 0.5
+  },
+  "workhours": { "start_min": 480, "end_min": 1140 },
+  "max_proposals": 3
+}
