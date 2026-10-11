@@ -4,6 +4,8 @@ Share one link, everyone paints when they're free, and ASAP finds the time that 
 people who matter. A deterministic scheduler (no LLM) whose certainty shows as motion: a teal
 nebula that calms as answers arrive and settles gold when the meeting locks.
 
+- **Proposal (what it does, how it works, roadmap):** [`docs/PROPOSAL.md`](docs/PROPOSAL.md)
+- **Development log:** [`docs/DEVLOG.md`](docs/DEVLOG.md)
 - **What to build and why:** [`ENGINEERING_HANDOFF.md`](ENGINEERING_HANDOFF.md) (the source of truth)
 - **Long-form PRD:** `prd-site/`, served at asap.tools/prd
 - **Going live:** [`SETUP.md`](SETUP.md)
