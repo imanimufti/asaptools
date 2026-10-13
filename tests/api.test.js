@@ -105,7 +105,9 @@ test('organizer can force compute and re-issue a link', { skip }, async () => {
   assert.equal(v.body.proposals[0].slot, slots[4]);
 
   const ken = v.body.participants.find((p) => p.name === 'Ken');
-  const r = await call('POST', `/api/participants/${ken.id}/link`, { token: m.org });
+  const same = await call('POST', `/api/participants/${ken.id}/link`, { token: m.org, body: {} });
+  assert.equal(tokenOf(same.body.link), m.ken, 'copy link shows the existing link');
+  const r = await call('POST', `/api/participants/${ken.id}/link`, { token: m.org, body: { rotate: true } });
   assert.equal(r.status, 200);
   assert.equal((await call('GET', '/api/meeting', { token: m.ken })).status, 404, 'old link stops working');
   assert.equal((await call('GET', '/api/meeting', { token: tokenOf(r.body.link) })).status, 200);
@@ -136,4 +138,128 @@ test('database: Supabase public roles cannot read tables', { skip }, async () =>
       await c.query('rollback');
     }
   } finally { await c.end(); }
+});
+
+// ---------- repairs and meeting space ----------
+
+async function lockedMeeting() {
+  const m = await create();
+  await call('POST', '/api/paints', { token: m.priya, body: { paints: free(4, 5) } });
+  let v = await call('POST', '/api/paints', { token: m.ken, body: { paints: free(4, 5), tz: 'America/Chicago' } });
+  v = await call('GET', '/api/meeting', { token: m.org });
+  v = await call('POST', '/api/lock', { token: m.org, body: { proposal_id: v.body.proposals[0].id } });
+  assert.equal(v.body.meeting.state, 'LOCKED');
+  return m;
+}
+
+test('CUJ-4: decline, then find a new time from existing answers and re-lock with history', { skip }, async () => {
+  const m = await lockedMeeting();
+  assert.equal((await call('POST', '/api/decline', { token: m.org })).status, 400, 'organizer does not decline');
+  let v = await call('POST', '/api/decline', { token: m.ken });
+  assert.equal(v.body.meeting.state, 'DESTABILIZED');
+  v = await call('GET', '/api/meeting', { token: m.org });
+  assert.equal(v.body.issue.kind, 'declined');
+  assert.equal(v.body.issue.name, 'Ken');
+  assert.equal((await call('POST', '/api/repair', { token: m.ken, body: { action: 'find_new' } })).status, 403);
+  v = await call('POST', '/api/repair', { token: m.org, body: { action: 'find_new' } });
+  assert.equal(v.body.meeting.state, 'PROPOSED', 'nobody repainted; the scorer reused answers');
+  assert.equal(v.body.proposals[0].slot, slots[5]);
+  v = await call('POST', '/api/lock', { token: m.org, body: { proposal_id: v.body.proposals[0].id } });
+  assert.equal(v.body.lock.slot, slots[5]);
+  assert.deepEqual(v.body.history, [slots[4]], 'old time kept as history');
+});
+
+test('CUJ-4: keep it without them', { skip }, async () => {
+  const m = await lockedMeeting();
+  await call('POST', '/api/decline', { token: m.ken });
+  const v = await call('POST', '/api/repair', { token: m.org, body: { action: 'keep' } });
+  assert.equal(v.body.meeting.state, 'LOCKED');
+  assert.equal(v.body.lock.slot, slots[4]);
+  assert.equal(v.body.total, 2, 'Ken no longer counts as attending');
+  assert.equal(v.body.participants.find((p) => p.name === 'Ken').declined, true);
+});
+
+test('CUJ-5: flex ask — Sure proposes the closest time', { skip }, async () => {
+  const m = await create();
+  await call('POST', '/api/paints', { token: m.priya, body: { paints: free(10) } });
+  await call('POST', '/api/paints', { token: m.ken, body: { paints: free(3, 10) } });
+  let v = await call('GET', '/api/meeting', { token: m.org });
+  const neg = v.body.negotiation;
+  assert.equal(neg.slot, slots[3], 'closest = earliest of the 2-of-3 times');
+  assert.deepEqual(neg.missing_required, ['Priya']);
+  const ken = v.body.participants.find((p) => p.name === 'Ken');
+  assert.equal((await call('POST', '/api/flex', { token: m.org, body: { participant_id: ken.id } })).status, 400, 'only blockers can be asked');
+  const priya = v.body.participants.find((p) => p.name === 'Priya');
+  assert.equal((await call('POST', '/api/flex', { token: m.priya, body: { participant_id: priya.id } })).status, 403);
+  assert.equal((await call('POST', '/api/flex', { token: m.org, body: { participant_id: priya.id } })).status, 200);
+  v = await call('GET', '/api/meeting', { token: m.priya });
+  assert.equal(v.body.flex.slot, neg.slot, 'the asked person sees the question');
+  assert.equal(JSON.stringify(v.body).includes('Ken'), false, 'the ask names no one');
+  v = await call('POST', '/api/flex/answer', { token: m.priya, body: { answer: 'sure' } });
+  assert.equal(v.body.meeting.state, 'PROPOSED');
+  v = await call('GET', '/api/meeting', { token: m.org });
+  assert.equal(v.body.proposals[0].slot, neg.slot);
+});
+
+test('CUJ-5: flex ask — Can\'t, then widen the window', { skip }, async () => {
+  const m = await create();
+  await call('POST', '/api/paints', { token: m.priya, body: { paints: free(10) } });
+  await call('POST', '/api/paints', { token: m.ken, body: { paints: free(3) } });
+  let v = await call('GET', '/api/meeting', { token: m.org });
+  const priya = v.body.participants.find((p) => p.name === 'Priya');
+  await call('POST', '/api/flex', { token: m.org, body: { participant_id: priya.id } });
+  await call('POST', '/api/flex/answer', { token: m.priya, body: { answer: 'cant' } });
+  assert.equal((await call('POST', '/api/flex/answer', { token: m.priya, body: { answer: 'sure' } })).status, 404, 'answered once');
+  v = await call('GET', '/api/meeting', { token: m.org });
+  assert.equal(v.body.negotiation.asks[0].status, 'cant');
+  assert.equal(v.body.notice.type, 'flex_cant');
+  assert.equal((await call('POST', '/api/widen', { token: m.ken })).status, 403);
+  v = await call('POST', '/api/widen', { token: m.org });
+  assert.equal(v.body.meeting.window_days, 30);
+  assert.equal(v.body.meeting.slots.length, slots.length / 7 * 30);
+  assert.equal(v.body.negotiation, null);
+});
+
+test('CUJ-6: add someone after lock — free keeps the lock, busy asks the organizer', { skip }, async () => {
+  const m = await lockedMeeting();
+  let a = await call('POST', '/api/participants', { token: m.org, body: { name: 'Rui', email: 'rui@example.com' } });
+  assert.equal(a.status, 200);
+  let v = await call('POST', '/api/paints', { token: tokenOf(a.body.added.link), body: { paints: free(4) } });
+  assert.equal(v.body.meeting.state, 'LOCKED', 'free at the locked time: nothing moves');
+  v = await call('GET', '/api/meeting', { token: m.org });
+  assert.equal(v.body.notice.type, 'added_ok');
+
+  a = await call('POST', '/api/participants', { token: m.org, body: { name: 'Sana', is_required: true } });
+  v = await call('POST', '/api/paints', { token: tokenOf(a.body.added.link), body: { paints: free(1) } });
+  assert.equal(v.body.meeting.state, 'DESTABILIZED');
+  v = await call('GET', '/api/meeting', { token: m.org });
+  assert.equal(v.body.issue.kind, 'added_conflict');
+  v = await call('POST', '/api/repair', { token: m.org, body: { action: 'keep' } });
+  assert.equal(v.body.meeting.state, 'LOCKED');
+  assert.equal(v.body.participants.find((p) => p.name === 'Sana').optional, true);
+  assert.equal((await call('POST', '/api/paints', { token: tokenOf(a.body.added.link), body: { paints: free(2) } })).status, 409, 'one answer after lock');
+});
+
+test('Required flag: a required non-DM blocks a time like a DM does', { skip }, async () => {
+  const m = await create({ people: [{ name: 'Priya', is_dm: true }, { name: 'Ken', is_required: true }] });
+  await call('POST', '/api/paints', { token: m.priya, body: { paints: free(4, 5) } });
+  const v = await call('POST', '/api/paints', { token: m.ken, body: { paints: free(5) } });
+  const o = await call('GET', '/api/meeting', { token: m.org });
+  assert.deepEqual(o.body.proposals.map((p) => p.slot), [slots[5]]);
+  assert.equal(v.body.meeting.state, 'PROPOSED');
+});
+
+test('CUJ-7: meeting space after lock — people move themselves, drops persist', { skip }, async () => {
+  const m = await lockedMeeting();
+  let v = await call('GET', '/api/meeting', { token: m.ken });
+  assert.equal(v.body.space.length, 3);
+  const ken = v.body.space.find((p) => p.me);
+  const priya = v.body.space.find((p) => p.name === 'Priya');
+  assert.equal(ken.city, 'Chicago');
+  assert.equal((await call('POST', '/api/graph/drop', { token: m.ken, body: { participant_id: priya.id, target: null } })).status, 403);
+  v = await call('POST', '/api/graph/drop', { token: m.ken, body: { participant_id: ken.id, target: { type: 'cluster', name: 'UTC' } } });
+  assert.equal(v.body.space.find((p) => p.me).mode, 'in_person');
+  v = await call('POST', '/api/graph/drop', { token: m.org, body: { participant_id: ken.id, target: { type: 'person', pid: priya.id } } });
+  const k = v.body.space.find((p) => p.id === ken.id);
+  assert.deepEqual([k.mode, k.at], ['remote_with', priya.id]);
 });

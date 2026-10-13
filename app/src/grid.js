@@ -106,12 +106,12 @@ export function createGrid(opts) {
   function onKey(e) {
     if (!cols.length) return;
     const keys = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
-    let [c, r] = focus || [narrowMq.matches ? dayIndex : 0, 0];
+    let [c, r] = focus || [narrowMq.matches ? dayIndex : pageStart(), 0];
     if (keys[e.key]) {
       e.preventDefault();
       c = Math.max(0, Math.min(cols.length - 1, c + keys[e.key][0]));
       r = Math.max(0, Math.min(rows.length - 1, r + keys[e.key][1]));
-      if (narrowMq.matches && c !== dayIndex) { dayIndex = c; render(); }
+      if (!inView(c)) { dayIndex = c; render(); }
       focus = [c, r];
       highlightFocus();
     } else if ((e.key === ' ' || e.key === 'Enter') && focus) {
@@ -133,6 +133,10 @@ export function createGrid(opts) {
   }
 
   // ----- rendering -----
+  // Desktop shows a week of columns at a time (longer windows page by week); phones show one day.
+  const WEEK = 7;
+  const pageStart = () => Math.floor(dayIndex / WEEK) * WEEK;
+  const inView = (c) => (narrowMq.matches ? c === dayIndex : Math.floor(c / WEEK) === Math.floor(dayIndex / WEEK));
   function markSets() {
     const m = o.marks || {}, sets = { prop: new Set(), alt: new Set(), locked: new Set(), why: new Set() };
     if (m.proposed) coveredSlots(m.proposed, o.durationMin).forEach((s) => sets.prop.add(s));
@@ -162,7 +166,7 @@ export function createGrid(opts) {
     layout();
     sets = markSets();
     const narrow = narrowMq.matches;
-    const shown = narrow ? [cols[dayIndex]] : cols;
+    const shown = narrow ? [cols[dayIndex]] : cols.slice(pageStart(), pageStart() + WEEK);
     root.replaceChildren();
     root.classList.toggle('readonly', !o.editable);
 
@@ -172,6 +176,14 @@ export function createGrid(opts) {
         h('button', { class: 'btn ghost icon', 'aria-label': 'Previous day', disabled: dayIndex === 0, onclick: () => { dayIndex--; render(); } }, '‹'),
         h('span', {}, `${dow} ${dom}`),
         h('button', { class: 'btn ghost icon', 'aria-label': 'Next day', disabled: dayIndex === cols.length - 1, onclick: () => { dayIndex++; render(); } }, '›'),
+      ));
+    } else if (!narrow && cols.length > WEEK) {
+      const first = dayLabel(shown[0]), last = dayLabel(shown.at(-1));
+      const ps = pageStart();
+      root.append(h('div', { class: 'daynav' },
+        h('button', { class: 'btn ghost icon', 'aria-label': 'Previous week', disabled: ps === 0, onclick: () => { dayIndex = ps - WEEK; render(); } }, '‹'),
+        h('span', {}, `${first.dom} – ${last.dom}`, h('span', { class: 'muted small' }, ` · week ${ps / WEEK + 1} of ${Math.ceil(cols.length / WEEK)}`)),
+        h('button', { class: 'btn ghost icon', 'aria-label': 'Next week', disabled: ps + WEEK >= cols.length, onclick: () => { dayIndex = ps + WEEK; render(); } }, '›'),
       ));
     }
 
@@ -225,7 +237,7 @@ export function createGrid(opts) {
     cellEl: (slot) => root.querySelector(`[data-slot="${CSS.escape(slot)}"]`),
     showDayOf(slot) {
       const i = cols.indexOf(colOfSlot(slot));
-      if (narrowMq.matches && i >= 0 && i !== dayIndex) { dayIndex = i; render(); }
+      if (i >= 0 && !inView(i)) { dayIndex = i; render(); }
     },
     get mine() { return { ...o.mine }; },
   };

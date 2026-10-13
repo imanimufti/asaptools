@@ -36,33 +36,39 @@ npm test
 
 ## What works today
 
-- **Homepage = the calendar:** name the meeting, add people (mark decision makers), paint your
-  times, send.
+- **Homepage = the calendar:** name the meeting, pick 7 or 30 days, add people as Attendee,
+  Required or Decision maker, paint your times, send.
 - **Invite links:** each person gets their own link (`/s/:token`), with no account needed. Links
-  are emailed when Resend is set up; otherwise they're shown to copy.
+  are emailed when Resend is set up; the organizer can always copy them again from the people
+  list, or reset a lost one.
 - **Painting:** drag-paint *free* / *if need be*. Phones show one day at a time, with 44px cells
-  and long-press for *if need be*. Shading shows how many people can make each time.
-- **Finding the time:** the scorer runs automatically once everyone has answered (or when the
-  organizer clicks **Find the time now**). It never picks a time without the decision makers and
-  the organizer.
-- **Reveal:** the orb swells, then docks on the winning cell. One proposal, with alternates behind
-  a button, ⓘ reasons, "why not" on any other time, and a below-quorum warning.
-- **Lock,** with confirmation emails.
-- **No common time:** the orb turns amber and names the closest time and who's blocking it.
-- **Privacy:** invitees only ever get per-time counts, never names or who painted what. This is
-  enforced in the API and covered by tests. Supabase's public API keys can't read any table.
+  and long-press for *if need be*; 30-day windows page by week on desktop. Shading shows how many
+  people can make each time.
+- **Finding the time:** runs automatically once everyone has answered (or when the organizer
+  clicks **Find the time now**). It never picks a time without the organizer, decision makers or
+  Required people.
+- **Reveal and lock:** the orb docks on the winning cell; one proposal, alternates, ⓘ reasons,
+  "why not" on any other time, below-quorum warning. Lock sends confirmations.
+- **Reschedule (CUJ-4):** an attendee taps *Can't make it anymore* → the meeting turns amber → the
+  organizer chooses *Find a new time* (reuses everyone's answers) or *Keep it without them*.
+  Re-locks show history (old time struck through) and email everyone.
+- **No common time (CUJ-5):** the orb won't settle; the organizer can ask each blocking person to
+  flex (they get a one-tap *Sure* / *Can't* that names no one) or widen the window to 30 days.
+- **Add someone after lock (CUJ-6):** they paint; if the locked time works nothing moves,
+  otherwise the organizer picks *Invite as optional* or *Find a new time for all*.
+- **Meeting space (CUJ-7, `/m/:token`):** after lock, the meeting as a star and attendees grouped
+  by city. Shift-drag (or **Move**) into a city's halo = in person there, onto a person = remote
+  with them, open space = home. Drops are saved for everyone.
+- **Privacy:** before lock, invitees only ever get per-time counts, never names or who painted
+  what. This is enforced in the API and covered by tests. Supabase's public API keys can't read
+  any table.
 
 ## Not built yet
 
-| Item | Handoff section |
+| Item | Why it waits |
 |---|---|
-| Reschedule loop | 5.4 |
-| Sending flex asks / widening the window | 5.5 |
-| Add attendee after lock | 5.6 |
-| Meeting-space graph `/m/:id` | 5.7 |
-| Google Calendar | 12 |
-| Supabase Realtime (the page polls every 5s for now) | 7 |
-| Magic-link claim | 3 |
-| Rate limiting | 10 |
-| Retention job | 12 |
-| 30 / 365 / 3,365-day calendar views | asap.tools wireframes 3b–3d |
+| Google Calendar (event write, decline webhooks, conflict hints) | Needs a Google Cloud OAuth client from you |
+| Supabase Realtime (the page polls every 5s for now) | Needs the Supabase project |
+| Magic-link claim | Fast follow |
+| Rate limiting, retention job | Hardening before launch |
+| 365 / 3,365-day views | Later (decision D3) |

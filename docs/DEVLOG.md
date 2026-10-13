@@ -11,6 +11,44 @@ what the product is.
 
 ---
 
+## 2026-10-13 — Repairs, Required flag, 30-day window, meeting space
+
+Built on the open-decision recommendations from the PRD draft (D1 propose and the organizer
+locks; D2 Required flag; D3 7 and 30 days; D5 Google optional). Any of them can change.
+
+### Built
+- **Required flag (D2):** people are Attendee, Required or Decision maker. Required people block
+  a time like decision makers do.
+- **30-day window (D3):** chosen at create; desktop pages through it a week at a time.
+- **Reschedule (CUJ-4):** `POST /api/decline` (attendee) → DESTABILIZED; `POST /api/repair`
+  (organizer) → *find_new* re-scores existing answers (RECOMPUTING → PROPOSED) or *keep* marks
+  them as not coming. Re-lock chains `locks.superseded_by` and shows history.
+- **No common time (CUJ-5):** `POST /api/flex` asks one blocking person; `POST /api/flex/answer`
+  takes Sure (their paint fills the slot, re-scores) or Can't. `POST /api/widen` grows the window
+  to 30, then 31, days.
+- **Add after lock (CUJ-6):** `POST /api/participants`; their first paint checks the locked time:
+  free → nothing moves; busy → DESTABILIZED, organizer picks optional or a re-run.
+- **Meeting space (CUJ-7):** `/m/:token` with `nebula.js` in graph mode; `POST /api/graph/drop`
+  saves in person / remote with / home. People sit by city; halos only for 2+ people.
+- **Links can be shown again:** tokens are stored encrypted beside their hash, so emails carry
+  personal links and *Copy link* no longer has to reset them.
+- **Migration** `20261013000000_repairs_and_space.sql`: participant flags, `flex_asks`,
+  `graph_nodes.mode`.
+
+### Verified
+- **25 automated tests pass**, including each new journey end to end.
+- **Browser run:** 30-day create with roles, phone painting, propose, lock, decline, keep without,
+  add after lock, meeting space, and a real shift-drag into another city's halo. No page errors.
+
+### Still waiting on accounts
+- Google Calendar and Supabase Realtime need the owner's Google Cloud and Supabase projects.
+
+### Also this week
+- PRD + CUJ draft and wireframes (W1–W11) published for stakeholder review; wireframes exported
+  to a 12-page PDF for external stakeholders.
+
+---
+
 ## 2026-10-11 — v1 core built
 
 **Commit:** `a3c173f`, *Build v1 core: calendar homepage, scoring engine, API, schema*

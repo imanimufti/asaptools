@@ -12,8 +12,9 @@ keys into the repo or a chat — they go straight into Netlify's environment var
    **Transaction pooler** connection string (port `6543`). Replace `[YOUR-PASSWORD]` in it with
    your database password. This is your `DATABASE_URL`.
 3. Create the tables. Either:
-   - **Easiest:** open **SQL Editor** in Supabase, paste the whole contents of
-     `supabase/migrations/20261011000000_init.sql`, and click **Run**. Or:
+   - **Easiest:** open **SQL Editor** in Supabase and run each file in
+     `supabase/migrations/` in name order (paste the whole file, click **Run**, then the next).
+     Today that's `20261011000000_init.sql`, then `20261013000000_repairs_and_space.sql`. Or:
    - **From a terminal** (needs Node 22): `DATABASE_URL='<your string>' npm run db:migrate`
 
 ## 2. Netlify (hosting) — required

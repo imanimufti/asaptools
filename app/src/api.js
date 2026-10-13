@@ -19,5 +19,12 @@ export const api = {
   savePaints: (token, paints, tz) => req('POST', '/api/paints', { token, body: { paints, tz } }),
   compute: (token) => req('POST', '/api/compute', { token }),
   lock: (token, proposalId) => req('POST', '/api/lock', { token, body: { proposal_id: proposalId } }),
-  newLink: (token, participantId) => req('POST', `/api/participants/${participantId}/link`, { token }),
+  link: (token, participantId, rotate = false) => req('POST', `/api/participants/${participantId}/link`, { token, body: { rotate } }),
+  addPerson: (token, person) => req('POST', '/api/participants', { token, body: person }),
+  decline: (token) => req('POST', '/api/decline', { token }),
+  repair: (token, action) => req('POST', '/api/repair', { token, body: { action } }),
+  flex: (token, participantId) => req('POST', '/api/flex', { token, body: { participant_id: participantId } }),
+  answerFlex: (token, answer) => req('POST', '/api/flex/answer', { token, body: { answer } }),
+  widen: (token) => req('POST', '/api/widen', { token }),
+  drop: (token, participantId, target) => req('POST', '/api/graph/drop', { token, body: { participant_id: participantId, target } }),
 };
