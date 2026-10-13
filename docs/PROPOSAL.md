@@ -2,8 +2,8 @@
 title: ASAP — Product Proposal
 aliases: [ASAP, asap.tools]
 tags: [asap, proposal, product]
-status: v1 in progress
-updated: 2026-10-11
+status: in progress — launch build
+updated: 2026-10-13
 ---
 
 # ASAP — Product Proposal
@@ -30,15 +30,18 @@ treat everyone as interchangeable and leave the organizer to reconcile replies b
 
 1. **The organizer opens asap.tools.** The homepage *is* the calendar: there's no signup and no
    landing page.
-2. They name the meeting, pick a duration, add people and **mark the decision makers**.
+2. They name the meeting, pick a duration and a 7- or 30-day window, add people and mark who
+   matters: **Decision maker**, **Required** or Attendee.
 3. They paint their own free times and press **Send invites**.
 4. **Each person gets their own link.** It opens straight on the grid, with no account or login.
    They paint times as *free* or *if need be*.
 5. **When everyone has answered, ASAP picks the best time.** The organizer can also ask it to
    decide early. It weighs who's required, how many can come, time zones and working hours.
 6. **The organizer locks it.** Everyone gets a confirmation.
-7. **If something changes** (a decline or a new person), ASAP proposes a repair and the organizer
-   decides. *(Coming next; see §6.)*
+7. **If something changes** (a decline, no common time, or a new person), ASAP proposes a repair
+   and the organizer decides. Nobody repaints.
+8. **After lock, the meeting space** shows who's coming and from where; people drag themselves
+   into a city to attend in person.
 
 ## 3. What makes it different
 
@@ -86,15 +89,16 @@ Browser (asap.tools)                       Netlify
   served at `asap.tools/prd`.
 - **Database:** Supabase Postgres. All access goes through the API; tables are locked to the
   public keys.
-- **Links:** every person's link carries a random token. Only a keyed hash of it is stored, so a
-  database leak doesn't leak working links.
+- **Links:** every person's link carries a random token. Lookups use a keyed hash; an encrypted
+  copy lets ASAP email a link or show it again.
 - **Time zones:** times are stored in UTC and shown in each viewer's local time. The window is
   defined in the organizer's time zone.
 
 ### The scoring formula
 
 ```
-candidates = start times where every REQUIRED person (decision makers + organizer)
+candidates = start times where every REQUIRED person (organizer, decision makers,
+             people marked Required — unless made optional)
              painted every slot the meeting covers
 
 score = 1.0 × share painted free
@@ -111,46 +115,54 @@ score = 1.0 × share painted free
 - **Weights:** they live in `lib/scoring.v1.json`, and every proposal records which version
   scored it.
 
-## 5. What's built (v1 core, Oct 11 2026)
+## 5. What's built (as of Oct 13 2026)
 
-- **Calendar homepage:** create, add people, tag decision makers, paint, send.
-- **Invite links:** a personal link per person. Emailed when Resend is configured, otherwise shown
-  to copy.
+- **Calendar homepage:** create, pick 7 or 30 days, add people as Attendee, Required or
+  Decision maker, paint, send.
+- **Invite links:** a personal link per person. Emailed when Resend is configured; the organizer
+  can always copy a link again or reset a lost one.
 - **Painting:** drag to paint *free* or *if need be*. Phones show one day per screen with 44px
-  cells and long-press for *if need be*. A heatmap shows how many can make each time.
+  cells and long-press for *if need be*; 30-day windows page by week on desktop. A heatmap
+  shows how many can make each time.
 - **Auto-compute:** when the last person answers, or on demand.
-- **Reveal:** orb beat, one proposal, alternates, ⓘ reasons, "why not" on any other time,
-  below-quorum chip.
-- **Lock,** with confirmation emails.
-- **No common time:** amber state, plus the cheapest flex suggestion.
-- **Organizer tools:** who's responded, and fresh links if someone loses theirs.
+- **Reveal and lock:** orb beat, one proposal, alternates, ⓘ reasons, "why not" on any other time,
+  below-quorum chip; lock sends confirmations.
+- **Reschedule:** a decline turns the meeting amber; the organizer finds a new time from
+  everyone's existing answers or keeps it without them. Re-locks show ~~old~~ → new.
+- **No common time:** the organizer asks each blocking person to flex (one-tap *Sure* / *Can't*,
+  naming no one) or widens the window to 30 days.
+- **Add someone after lock:** if the locked time works for them nothing moves; otherwise the
+  organizer picks optional or a re-run.
+- **Meeting space** (`/m/:link`): the meeting as a star, people grouped by city; drag into a
+  city's halo (in person), onto a person (remote with them) or open space (home). Saved for all.
 - **Privacy split** enforced in the API; database locked down.
-- **Tests:** 18 automated tests, including end-to-end and privacy checks.
+- **Tests:** 25 automated tests, including every journey end to end and privacy checks.
 
 ## 6. Planned features
 
-### Next (rest of v1)
+### Launch (remaining)
 
 | Feature | What it does |
 |---|---|
-| **Reschedule loop** | A decline turns the locked meeting amber. The organizer chooses *find a new time* or *keep it without them*. Everyone's existing answers are reused, so no one repaints. History shows ~~Tue 2pm~~ → Thu 10am. |
-| **Google Calendar** | Locking writes the event to the organizer's calendar with invitees as guests. Reschedules update the same event, and declines in Google trigger the reschedule loop. Optional conflict nudges for the organizer. |
-| **Flex asks** | When no time works, the organizer sends the blocking person a one-tap *Sure* / *Can't*. *Can't* leads to widening the date window. |
-| **Add someone after lock** | A calendar or availability check. If it's clear, nothing moves; if not, the organizer picks an optional invite or a re-run. |
-| **Meeting space** (`/m/:id`) | A live graph: the meeting as a star, people as nodes clustered by city. Drag someone into a city's halo to attend in person, onto a person to attend remotely with them. |
-| **Live updates** | Supabase Realtime, so the orb reacts the instant someone answers (today the page refreshes every 5s). |
-| **Longer horizons** | 30-day, 365-day and 3,365-day calendar views for planning far ahead. |
-| **Claim your history** | A magic link turns a guest into an account without losing past meetings. |
-| **Hardening** | Rate limiting, a 90-day anonymization of guest data, and a reduced-motion polish pass. |
+| **Google Calendar** | Locking writes the event to the organizer's calendar with invitees as guests. Reschedules update the same event, and declines in Google trigger the reschedule loop. Optional conflict hints for the organizer. *Needs a Google Cloud OAuth client.* |
+| **Live updates** | Supabase Realtime, so the orb reacts the instant someone answers (today the page refreshes every 5s). *Needs the Supabase project.* |
+| **Hardening** | Rate limiting, 90-day anonymization of guest data, and a reduced-motion polish pass. |
 
-### v2
+### Fast follow
+
+| Feature | What it does |
+|---|---|
+| **Claim your history** | A magic link turns a guest into an account without losing past meetings. |
+| **Invitee conflict hints** | Invitees connect their calendar to get "this clashes with your 1:1" hints. |
+
+### Later
 
 | Feature | What it does |
 |---|---|
 | **Breakout rooms ("blobs")** | Drag two or more people together in the meeting space to spawn a room. Drag your own node in to join live video and out to leave. Rooms persist until closed. The video provider (Daily vs LiveKit) is decided at the end of week 6. |
 | **Async attendance** | Keep the slot and attend later via a recording and recap, shown honestly as "5 live + 1 async". |
 | **Recurring series** | Offered only after a successful lock. Each occurrence has its own state and can be repaired alone. |
-| **Invitee conflict nudges** | Invitees connect their calendar to get "this clashes with your 1:1" hints. |
+| **Longer horizons** | 365-day and 3,365-day calendar views for planning far ahead. |
 
 ### Not planned
 Outlook/CalDAV, Slack, SMS or push notifications, and any LLM-written copy, unless demand data
